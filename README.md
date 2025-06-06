@@ -24,6 +24,16 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Supabase Configuration
+
+Set the following environment variables in a `.env` file:
+
+```
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+STORAGE_BUCKET=videos  # or your bucket name
+```
+
 ## Running the Application
 
 To run the application in development mode:
