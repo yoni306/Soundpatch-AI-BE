@@ -21,6 +21,33 @@ def process_media_file(file_path: str) -> str:
     shutil.copyfile(file_path, processed_path)  # Replace with real GPU logic
     return processed_path
 
+    supabase_client = ClientFactory.setup_clients()
+
+    # Get models from ModelFactory
+    (
+        detect_noise_model,
+        gemini_model,
+        wav2vec2_processor,
+        wav2vec2_model,
+        text_to_mel_model,
+        hifigan_model,
+        device
+    ) = ModelFactory.setup_models()
+
+    # Process the file
+    process_file(
+        filename,
+        supabase_client,
+        detect_noise_model,
+        gemini_model,
+        wav2vec2_processor,
+        wav2vec2_model,
+        text_to_mel_model,
+        hifigan_model,
+        device
+    )
+
+
 # Infer MIME type
 def get_mime_type(filename: str) -> str:
     mime_type, _ = mimetypes.guess_type(filename)

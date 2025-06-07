@@ -48,7 +48,6 @@ def generate_prompt_text(r: dict, est_words: int) -> str:
 def restore_missing_text(
     gemini_model,
     pred_rows: list[dict],
-    gt_df: pd.DataFrame,
     log_path: str = None
 ) -> list[dict]:
     log_blocks = []
@@ -56,8 +55,6 @@ def restore_missing_text(
 
     for i, r in enumerate(pred_rows):
         r["clip_id"] = i
-        gt_row = best_matching_gt_row(r, gt_df)
-        r["ground_truth_text"] = gt_row["missing_text"]
 
         seg_duration = r["end_time"] - r["start_time"]
         approx_words = max(1, math.ceil(seg_duration * 2.3))
@@ -76,7 +73,6 @@ def restore_missing_text(
             f"{'=' * 80}\n"
             f"Clip {r['clip_id']}  ({r['start_time']:.2f}-{r['end_time']:.2f}s)  "
             f"type={r['label'] if 'label' in r else r['noise_type']}\n\n"
-            f"✅ Ground-truth text:\n{r['ground_truth_text']}\n\n"
             f"🤖 Gemini prediction:\n{r['restored_text']}\n"
         )
         log_blocks.append(log_block)

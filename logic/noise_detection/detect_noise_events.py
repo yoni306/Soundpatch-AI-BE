@@ -3,7 +3,6 @@ import tensorflow as tf
 import librosa
 import os
 import tempfile
-from logic.noise_detection.detect_noise_moedl import detect_noisemodel
 
 # --- Constants ---
 LABEL_NAMES = ["signal_loss", "volume_drop", "compression_artifact"]
@@ -22,7 +21,7 @@ def preprocess_wav(wav_bytes):
     return log_mel  # shape: (64, T)
 
 
-def predict_chunks(log_mel):
+def predict_chunks(log_mel, detect_noise_model):
     T = log_mel.shape[1]
     y_pred_prob = np.zeros((T, 3), dtype=float)
     if T > MAX_CHUNK_SIZE:
@@ -30,11 +29,11 @@ def predict_chunks(log_mel):
         for start, end in chunks:
             chunk = log_mel[:, start:end]
             chunk = np.expand_dims(chunk, axis=(0, -1))  # shape: (1, 64, chunk_len, 1)
-            preds = model.predict(chunk, verbose=0)[0]
+            preds = detect_noise_model.predict(chunk, verbose=0)[0]
             y_pred_prob[start:end, :] = preds
     else:
         X = np.expand_dims(log_mel, axis=(0, -1))  # shape: (1, 64, T, 1)
-        y_pred_prob = model.predict(X, verbose=0)[0]
+        y_pred_prob = detect_noise_model.predict(X, verbose=0)[0]
     return y_pred_prob
 
 
@@ -69,7 +68,7 @@ def extract_events(y_pred_prob):
     return events
 
 
-def detect_noise_events(file_path: str):
+def detect_noise_events(file_path: str, detect_noise_model):
     file = open(file_path, "rb")
     file_name = file_path.split("/")[-1]
     if not file_name.endswith(".wav"):
@@ -83,7 +82,7 @@ def detect_noise_events(file_path: str):
 
         # Preprocess + Predict
         log_mel = preprocess_wav(tmp_path)
-        y_pred_prob = predict_chunks(log_mel)
+        y_pred_prob = predict_chunks(log_mel, detect_noise_model)
         events = extract_events(y_pred_prob)
 
         # Cleanup

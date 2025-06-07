@@ -69,13 +69,13 @@ def build_model(input_shape=(64, None, 1)):
     return model
 
 
-detect_noisemodel = build_model()
-detect_noisemodel.load_weights("your_model_weights_path.h5")
-detect_noisemodel.compile(
-    optimizer=tf.keras.optimizers.Adam(1e-4),
-    loss=WeightedBCELoss(),
-    metrics=["accuracy", f1_metric_05]
-)
+# detect_noise_model = build_model()
+# detect_noise_model.load_weights("your_model_weights_path.h5")
+# detect_noise_model.compile(
+#     optimizer=tf.keras.optimizers.Adam(1e-4),
+#     loss=WeightedBCELoss(),
+#     metrics=["accuracy", f1_metric_05]
+# )
 
 
 # # טעינת המודל והמשקלים עם קומפילציה מתאימה
