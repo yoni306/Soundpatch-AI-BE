@@ -1,0 +1,10 @@
+1. Convert file to wav file
+2. Detect audio gaps
+3. Run STT
+4. Run Gemini model
+5. Etract embedding of wav file
+6, Convert Gemini output to tokens
+7. Run Text to Mel Spectogram model
+8. Run Vocoder model
+9. replace the sound events in the new ones
+10. Return the output as the original file format

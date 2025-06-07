@@ -3,7 +3,7 @@ import tensorflow as tf
 import librosa
 import os
 import tempfile
-from detect_noise_moedl import detect_noisemodel
+from logic.noise_detection.detect_noise_moedl import detect_noisemodel
 
 # --- Constants ---
 LABEL_NAMES = ["signal_loss", "volume_drop", "compression_artifact"]
