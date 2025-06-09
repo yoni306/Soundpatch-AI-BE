@@ -4,6 +4,7 @@ import numpy as np
 import soundfile as sf
 from tqdm import tqdm
 from nemo.collections.tts.models import HifiGanModel
+from typing import Dict, Any
 
 # Load pretrained HiFi-GAN model once
 def load_hifigan_model(model_name="nvidia/tts_hifigan"):
@@ -15,12 +16,12 @@ def load_hifigan_model(model_name="nvidia/tts_hifigan"):
 
 # Save mel predictions to .wav files
 def save_mel_predictions_as_audio(
-    mel_predictions: dict,
+    mel_predictions: Dict[str, np.ndarray],
     output_dir: str,
     model,
     device,
     sample_rate: int = 22050
-):
+) -> None:
     os.makedirs(output_dir, exist_ok=True)
 
     for clip_path, mel in tqdm(mel_predictions.items(), total=len(mel_predictions), desc="🎧 Vocoder synthesis"):

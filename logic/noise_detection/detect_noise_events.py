@@ -1,8 +1,8 @@
 import numpy as np
-import tensorflow as tf
 import librosa
 import os
 import tempfile
+from typing import List, Dict, Any
 
 # --- Constants ---
 LABEL_NAMES = ["signal_loss", "volume_drop", "compression_artifact"]
@@ -37,8 +37,8 @@ def predict_chunks(log_mel, detect_noise_model):
     return y_pred_prob
 
 
-def extract_events(y_pred_prob):
-    events = []
+def extract_events(y_pred_prob: np.ndarray) -> List[Dict[str, Any]]:
+    events: List[Dict[str, Any]] = []
     T = y_pred_prob.shape[0]
     y_pred_bin = np.zeros_like(y_pred_prob)
     for i in range(3):
@@ -68,7 +68,7 @@ def extract_events(y_pred_prob):
     return events
 
 
-def detect_noise_events(file_path: str, detect_noise_model):
+def detect_noise_events(file_path: str, detect_noise_model) -> List[Dict[str, Any]]:
     file = open(file_path, "rb")
     file_name = file_path.split("/")[-1]
     if not file_name.endswith(".wav"):

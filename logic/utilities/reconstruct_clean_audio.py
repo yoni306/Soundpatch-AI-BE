@@ -1,11 +1,12 @@
 from pydub import AudioSegment
 import os
+from typing import List, Dict, Any
 
-def seconds_to_mmss(seconds):
+def seconds_to_mmss(seconds: float) -> str:
     m, s = divmod(int(seconds), 60)
     return f"{m:02d}:{s:02d}"
 
-def reconstruct_clean_audio(original_wav_path, events, vocoder_wav_dir, output_path):
+def reconstruct_clean_audio(original_wav_path: str, events: List[Dict[str, Any]], vocoder_wav_dir: str, output_path: str) -> str:
     """
     Reconstructs a clean WAV file by replacing noisy segments with vocoder-generated ones.
 

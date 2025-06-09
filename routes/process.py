@@ -1,52 +1,27 @@
 import os
-import shutil
 import mimetypes
-from fastapi import APIRouter, HTTPException, Form
-from fastapi.responses import JSONResponse
-from supabase import create_client, Client
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import Response
 from config import settings
+from logic.factory.model_factory import ModelFactory
+from process_flow import process_file
+from typing import Union
 
 router = APIRouter()
 
 # Ensure upload directory exists
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
-# Initialize Supabase client
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-
-# Dummy processing function
-def process_media_file(file_path: str) -> str:
-    filename = os.path.basename(file_path)
-    processed_path = os.path.join(settings.UPLOAD_DIR, f"processed_{filename}")
-    shutil.copyfile(file_path, processed_path)  # Replace with real GPU logic
-    return processed_path
-
-    supabase_client = ClientFactory.setup_clients()
-
-    # Get models from ModelFactory
-    (
-        detect_noise_model,
-        gemini_model,
-        wav2vec2_processor,
-        wav2vec2_model,
-        text_to_mel_model,
-        hifigan_model,
-        device
-    ) = ModelFactory.setup_models()
-
-    # Process the file
-    process_file(
-        filename,
-        supabase_client,
-        detect_noise_model,
-        gemini_model,
-        wav2vec2_processor,
-        wav2vec2_model,
-        text_to_mel_model,
-        hifigan_model,
-        device
-    )
-
+# Initialize models
+(
+    detect_noise_model,
+    gemini_model,
+    wav2vec2_processor,
+    wav2vec2_model,
+    text_to_mel_model,
+    hifigan_model,
+    device
+) = ModelFactory.setup_models()
 
 # Infer MIME type
 def get_mime_type(filename: str) -> str:
@@ -54,40 +29,49 @@ def get_mime_type(filename: str) -> str:
     return mime_type or "application/octet-stream"
 
 @router.post("/process")
-async def process_file_from_supabase(file_key: str = Form(...)):
+async def process_file_upload(file: UploadFile = File(...)) -> Response:
+    """
+    Process an uploaded audio/video file and return the processed version.
+    
+    Args:
+        file (UploadFile): The file to process
+        
+    Returns:
+        Response: The processed file content with appropriate headers
+    """
     try:
-        # Step 1: Download file from Supabase
-        local_input_path = os.path.join(settings.UPLOAD_DIR, os.path.basename(file_key))
-        response = supabase.storage.from_(settings.STORAGE_BUCKET).download(file_key)
-
+        # Step 1: Save uploaded file temporarily
+        local_input_path = os.path.join(settings.UPLOAD_DIR, file.filename)
         with open(local_input_path, 'wb') as f:
-            f.write(response)
+            content = await file.read()
+            f.write(content)
 
         # Step 2: Process file
-        processed_path = process_media_file(local_input_path)
-        processed_filename = os.path.basename(processed_path)
-        processed_key = f"processed/{processed_filename}"
+        processed_content = process_file(
+            local_input_path,
+            detect_noise_model,
+            gemini_model,
+            wav2vec2_processor,
+            wav2vec2_model,
+            text_to_mel_model,
+            hifigan_model,
+            device
+        )
 
-        # Step 3: Detect MIME type
-        content_type = get_mime_type(processed_filename)
+        # Step 3: Get content type
+        content_type = get_mime_type(file.filename)
 
-        # Step 4: Upload processed file to Supabase
-        with open(processed_path, 'rb') as f:
-            supabase.storage.from_(settings.STORAGE_BUCKET).upload(
-                processed_key,
-                f,
-                {"content-type": content_type}
-            )
-
-        # Step 5: Clean up
+        # Step 4: Clean up input file
         os.remove(local_input_path)
-        os.remove(processed_path)
 
-        return JSONResponse(content={
-            "message": "✅ File processed and uploaded.",
-            "processed_file_key": processed_key,
-            "mime_type": content_type
-        })
+        # Step 5: Return the processed file content
+        return Response(
+            content=processed_content,
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f"attachment; filename=processed_{file.filename}"
+            }
+        )
 
     except Exception as e:
         print("❌ Error:", str(e))

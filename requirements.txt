@@ -18,3 +18,4 @@ nemo_toolkit[tts]
 soundfile
 pydub
 moviepy
+python-multipart

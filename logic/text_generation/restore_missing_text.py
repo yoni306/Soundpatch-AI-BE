@@ -1,6 +1,7 @@
 import os, json, math
 import pandas as pd
 import google.generativeai as genai
+from typing import List, Dict, Any
 
 # ------------------ SETUP --------------------------------
 
@@ -47,9 +48,9 @@ def generate_prompt_text(r: dict, est_words: int) -> str:
 
 def restore_missing_text(
     gemini_model,
-    pred_rows: list[dict],
+    pred_rows: List[Dict[str, Any]],
     log_path: str = None
-) -> list[dict]:
+) -> List[Dict[str, Any]]:
     log_blocks = []
     restored_results = []
 

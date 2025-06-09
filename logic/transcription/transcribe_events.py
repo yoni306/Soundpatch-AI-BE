@@ -2,11 +2,12 @@ from pathlib import Path
 from pydub import AudioSegment
 import requests, uuid, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Dict, Any
 
 API = "https://api.assemblyai.com/v2"
 PRE_PAD = POST_PAD = 8  # in seconds
 
-def clip_and_transcribe_events(events, wav_path, api_key, max_workers=5):
+def clip_and_transcribe_events(events: List[Dict[str, Any]], wav_path: str, api_key: str, max_workers: int = 5) -> Dict[str, Any]:
     headers_upload = {"authorization": api_key}
     headers_transcribe = {
         "authorization": api_key,
