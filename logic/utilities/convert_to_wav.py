@@ -1,8 +1,9 @@
 import os
 import tempfile
 from pathlib import Path
+from moviepy import VideoFileClip
 from pydub import AudioSegment
-from moviepy.editor import VideoFileClip
+
 
 SUPPORTED_AUDIO = {".wav", ".mp3", ".m4a", ".ogg", ".flac"}
 SUPPORTED_VIDEO = {".mp4", ".mov", ".avi", ".webm", ".mkv"}
