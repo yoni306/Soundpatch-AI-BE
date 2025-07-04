@@ -1,4 +1,4 @@
-from logic.noise_detection.detect_noise_moedl import build_model
+from logic.noise_detection.detect_noise_moedl import load_noise_detectoion_model
 from logic.text_generation.restore_missing_text import configure_gemini
 from logic.speaker_embedding.speaker_embedding import load_wav2vec2_model
 from logic.mel_spectogram_generation.text_to_mel_inference import load_text_to_mel_model
@@ -22,8 +22,7 @@ class ModelFactory:
                 - device: Device for model inference
         """
         # Initialize detect_noise_model
-        detect_noise_model = build_model()
-        detect_noise_model.load_weights(settings.DETECT_NOISE_MODEL_WEIGHTS)
+        detect_noise_model = load_noise_detectoion_model(settings.DETECT_NOISE_MODEL_WEIGHTS)
 
         # Initialize gemini_model
         gemini_model = configure_gemini(settings.GEMINI_API_KEY)

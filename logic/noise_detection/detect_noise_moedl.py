@@ -2,21 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 
 
-# Weighted BCE Loss תומכת ב־multi-label
-class WeightedBCELoss(tf.keras.losses.Loss):
-    def __init__(self, pos_weight=10.0, name="weighted_bce_loss"):
-        super().__init__(name=name)
-        self.pos_weight = pos_weight
-
-    def call(self, y_true, y_pred):
-        eps = 1e-7
-        y_pred = tf.clip_by_value(y_pred, eps, 1 - eps)
-        bce = -(y_true * tf.math.log(y_pred) + (1 - y_true) * tf.math.log(1 - y_pred))
-        w = y_true * self.pos_weight + (1 - y_true)
-        return tf.reduce_mean(w * bce)
-
-
-# Multi-label Micro-F1
+# --- F1 Metric --------------------------------------------------------------
 @tf.function
 def f1_metric_05(y_true, y_pred):
     y_pred_ = tf.cast(y_pred > 0.5, tf.float32)
@@ -35,7 +21,7 @@ def f1_metric_05(y_true, y_pred):
     return f1
 
 
-# מודל CNN + BiLSTM ל־(T, 3)
+# --- Model Architecture -----------------------------------------------------
 def build_model(input_shape=(64, None, 1)):
     inputs = layers.Input(shape=input_shape)
 
@@ -69,32 +55,9 @@ def build_model(input_shape=(64, None, 1)):
     return model
 
 
-# detect_noise_model = build_model()
-# detect_noise_model.load_weights("your_model_weights_path.h5")
-# detect_noise_model.compile(
-#     optimizer=tf.keras.optimizers.Adam(1e-4),
-#     loss=WeightedBCELoss(),
-#     metrics=["accuracy", f1_metric_05]
-# )
-
-
-# # טעינת המודל והמשקלים עם קומפילציה מתאימה
-# def load_model_and_weights(weights_path="/content/test/best_model.h5"):
-#     model = build_model()
-#     model.load_weights(weights_path)
-#     model.compile(
-#         optimizer=tf.keras.optimizers.Adam(1e-4),
-#         loss=WeightedBCELoss(),
-#         metrics=[
-#             tf.keras.metrics.Precision(name="precision"),
-#             tf.keras.metrics.Recall(name="recall"),
-#             tf.keras.metrics.BinaryAccuracy(name="accuracy"),
-#             f1_metric_05
-#         ]
-#     )
-#     print(f"✅ Model loaded and compiled from: {weights_path}")
-#     return model
-
-
-# # קריאה לטעינה בפועל
-# model = load_model_and_weights()
+# --- Load Model -------------------------------------------------------------
+def load_noise_detectoion_model(weights_path: str):
+    model = build_model()
+    model.load_weights(weights_path)
+    print(f"✅ Noise-Detection model loaded from: {weights_path}")
+    return model

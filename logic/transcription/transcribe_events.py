@@ -33,7 +33,6 @@ def clip_and_transcribe_events(events: List[Dict[str, Any]], wav_path: str, api_
         tid = requests.post(f"{API}/transcript", headers=headers_transcribe,
                             json={"audio_url": up["upload_url"], "punctuate": True}).json()["id"]
         return idx, tid, cs, ev
-
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = [pool.submit(clip_upload, (i, ev)) for i, ev in enumerate(events)]
         for fu in as_completed(futures):
@@ -52,3 +51,4 @@ def clip_and_transcribe_events(events: List[Dict[str, Any]], wav_path: str, api_
         print(f"⌛ Waiting… {len(pending)} jobs remaining")
 
     return clip_results
+

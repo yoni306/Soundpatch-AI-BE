@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     ASSEMBLYAI_API_KEY: str
     GEMINI_API_KEY: str
     # Model weights paths
-    DETECT_NOISE_MODEL_WEIGHTS: str = "path/to/detect_noise_weights.h5"
-    TEXT_TO_MEL_MODEL_WEIGHTS: str = "path/to/text_to_mel_weights.h5"
+    DETECT_NOISE_MODEL_WEIGHTS: str = "detect_noise_weights.h5"
+    TEXT_TO_MEL_MODEL_WEIGHTS: str = "text_to_mel_weights.h5"
     
     class Config:
         case_sensitive = True

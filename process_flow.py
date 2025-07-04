@@ -83,7 +83,7 @@ def process_file(
     save_mel_predictions_as_audio(mel_predictions, output_dir, hifigan_model, device)
 
     # Step 8: Create a new WAV file that replaces the noisy events
-    clean_wav_path: str = reconstruct_clean_audio(wav_path, mel_spectrograms, noise_events)
+    clean_wav_path: str = reconstruct_clean_audio(wav_path, mel_spectrograms, noise_events, output_dir)
 
     # Step 9: Convert to the original file format
     final_output_path: str = finalize_audio_or_video_output(file_path, clean_wav_path)

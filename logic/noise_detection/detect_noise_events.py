@@ -16,7 +16,7 @@ MAX_CHUNK_SIZE = 1000
 # --- Utility Functions ---
 def preprocess_wav(wav_bytes):
     y, _ = librosa.load(wav_bytes, sr=SR)
-    mel = librosa.feature.melspectrogram(y, sr=SR, n_fft=1024, hop_length=FRAME_HOP, n_mels=N_MELS)
+    mel = librosa.feature.melspectrogram(y=y, sr=SR, n_fft=1024, hop_length=FRAME_HOP, n_mels=N_MELS)
     log_mel = librosa.power_to_db(mel).astype(np.float32)
     return log_mel  # shape: (64, T)
 

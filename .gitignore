@@ -66,3 +66,9 @@ coverage.xml
 
 # VS Code
 .vscode/ 
+
+# Output files
+temp_files/
+
+# Model weights
+*.h5
