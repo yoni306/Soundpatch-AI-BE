@@ -55,9 +55,52 @@ def build_model(input_shape=(64, None, 1)):
     return model
 
 
+# --- Focal Loss Function (same as in training) ------------------------------
+def focal_loss_dynamic(gamma=2.0, eps=1e-7):
+    """Advanced Focal Loss with Dynamic Class Weighting"""
+    def loss_fn(y_true, y_pred):
+        y_pred = tf.clip_by_value(y_pred, eps, 1-eps)
+        freq_pos = tf.reduce_mean(y_true, axis=[0,1])
+        alpha = 1 - freq_pos
+        term1 = - alpha * y_true * tf.pow(1-y_pred, gamma) * tf.math.log(y_pred)
+        term2 = - (1-alpha) * (1-y_true) * tf.pow(y_pred, gamma) * tf.math.log(1-y_pred)
+        return tf.reduce_mean(term1+term2)
+    return loss_fn
+
+
 # --- Load Model -------------------------------------------------------------
-def load_noise_detectoion_model(weights_path: str):
-    model = build_model()
-    model.load_weights(weights_path)
-    print(f"✅ Noise-Detection model loaded from: {weights_path}")
-    return model
+def load_noise_detectoion_model(weights_path: str, verbose: bool = True):
+    """Load the trained noise detection model"""
+    import os
+    import numpy as np
+    
+    if verbose:
+        print("Loading trained noise detection model...")
+    
+    # Set function name for proper loading
+    f1_metric_05.__name__ = "f1_metric_05"
+    
+    # Define custom objects exactly as in working notebook
+    custom_objects = {
+        'focal_loss_dynamic': focal_loss_dynamic,
+        'loss_fn': focal_loss_dynamic(),
+        'f1_metric_05': f1_metric_05
+    }
+    
+    try:
+        model = tf.keras.models.load_model(weights_path, custom_objects=custom_objects)
+        if verbose:
+            print(f"Model loaded successfully ({model.count_params():,} parameters)")
+        
+        # Quick test to verify model is working
+        test_input = np.random.random((1, 64, 100, 1)).astype(np.float32)
+        test_output = model.predict(test_input, verbose=0)
+        if verbose:
+            print(f"Model ready for inference")
+        
+        return model
+        
+    except Exception as e:
+        if verbose:
+            print(f"Error loading model: {e}")
+        return None
