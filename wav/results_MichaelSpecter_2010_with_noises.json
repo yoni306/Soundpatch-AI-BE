@@ -1,0 +1,141 @@
+{
+  "audio_file": "MichaelSpecter_2010_with_noises.wav",
+  "noise_events": [
+    {
+      "start_time": 980.09,
+      "end_time": 985.48,
+      "duration": 5.39,
+      "noise_type": "volume_drop",
+      "confidence": 0.901
+    }
+  ],
+  "transcription_results": {
+    "7000190c-4810-4189-b442-c120e08d1eea": {
+      "idx": 0,
+      "clip_start": 970.09,
+      "ev": {
+        "start_time": 980.09,
+        "end_time": 985.48,
+        "duration": 5.39,
+        "noise_type": "volume_drop",
+        "confidence": 0.901
+      },
+      "words": [
+        {
+          "text": "Thank",
+          "start": 1360,
+          "end": 1560,
+          "confidence": 0.9511719,
+          "speaker": null
+        },
+        {
+          "text": "you.",
+          "start": 1560,
+          "end": 1840,
+          "confidence": 0.99560547,
+          "speaker": null
+        },
+        {
+          "text": "Thank",
+          "start": 5600,
+          "end": 5960,
+          "confidence": 0.94506836,
+          "speaker": null
+        },
+        {
+          "text": "you.",
+          "start": 5960,
+          "end": 6240,
+          "confidence": 0.9970703,
+          "speaker": null
+        },
+        {
+          "text": "In",
+          "start": 21760,
+          "end": 22080,
+          "confidence": 0.99560547,
+          "speaker": null
+        },
+        {
+          "text": "25",
+          "start": 22080,
+          "end": 22480,
+          "confidence": 0.99976,
+          "speaker": null
+        },
+        {
+          "text": "years,",
+          "start": 22480,
+          "end": 22800,
+          "confidence": 0.99902344,
+          "speaker": null
+        },
+        {
+          "text": "global",
+          "start": 22800,
+          "end": 23200,
+          "confidence": 0.99902344,
+          "speaker": null
+        },
+        {
+          "text": "energy",
+          "start": 23200,
+          "end": 23520,
+          "confidence": 0.99853516,
+          "speaker": null
+        },
+        {
+          "text": "consumption",
+          "start": 23520,
+          "end": 24040,
+          "confidence": 0.9913737,
+          "speaker": null
+        },
+        {
+          "text": "will",
+          "start": 24040,
+          "end": 24240,
+          "confidence": 0.99853516,
+          "speaker": null
+        },
+        {
+          "text": "increase",
+          "start": 24240,
+          "end": 24560,
+          "confidence": 0.9995117,
+          "speaker": null
+        },
+        {
+          "text": "by",
+          "start": 24560,
+          "end": 24880,
+          "confidence": 0.9975586,
+          "speaker": null
+        },
+        {
+          "text": "50%.",
+          "start": 24880,
+          "end": 25400,
+          "confidence": 0.98584,
+          "speaker": null
+        }
+      ]
+    }
+  },
+  "restoration_results": [
+    {
+      "clip_id": 0,
+      "filename": null,
+      "start_time": 980.09,
+      "end_time": 985.48,
+      "duration": 5.389999999999986,
+      "noise_type": "volume_drop",
+      "confidence": 0.901,
+      "context_before": "Thank you. Thank you.",
+      "partial_inside": "",
+      "context_after": "In 25 years, global energy consumption will increase by 50%.",
+      "restored_text": "very much.  And now,"
+    }
+  ],
+  "status": "completed_steps_1_4"
+}

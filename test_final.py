@@ -16,14 +16,22 @@ from config import settings
 
 def test_complete_pipeline():
     """Test the complete pipeline"""
-    test_wav = r"c:\Users\מנהל\Documents\GitHub\Soundpatch-AI-BE\AaronKoblin_2011.wav"
+    # Use generic path to wav folder in project
+    wav_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wav")
     
-    if not os.path.exists(test_wav):
-        print(f"❌ WAV file not found: {test_wav}")
+    if not os.path.exists(wav_folder):
+        print(f"❌ WAV folder not found: {wav_folder}")
         return
     
+    # Find first .wav file in the folder
+    wav_files = [f for f in os.listdir(wav_folder) if f.lower().endswith('.wav')]
+    if not wav_files:
+        print(f"❌ No WAV files found in: {wav_folder}")
+        return
+    
+    test_wav = os.path.join(wav_folder, wav_files[0])
     print("🚀 Starting complete pipeline test...")
-    print(f"📁 Processing: {os.path.basename(test_wav)}")
+    print(f"📁 Processing: {wav_files[0]} from wav folder")
     print("=" * 80)
     
     # Step 1: Noise Detection
@@ -65,10 +73,17 @@ def test_complete_pipeline():
     
     # Step 3: LLM Text Restoration
     print("🤖 Step 3: Restoring missing text with Gemini...")
+    print("📝 Sending prompts to Gemini API...")
     
     try:
         restored_results = restore_missing_text_via_rest(clip_results, api_key=settings.GEMINI_API_KEY)
         print(f"✅ Restored text for {len(restored_results)} segments")
+        
+        # Print detailed Gemini responses
+        print("\n🔍 Gemini API Responses:")
+        for i, result in enumerate(restored_results):
+            print(f"  Segment {i+1}: '{result['restored_text']}'")
+            
     except Exception as e:
         print(f"❌ LLM restoration failed: {e}")
         return

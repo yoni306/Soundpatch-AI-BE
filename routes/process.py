@@ -15,7 +15,6 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 # Initialize models
 (
     detect_noise_model,
-    gemini_model,
     wav2vec2_processor,
     wav2vec2_model,
     text_to_mel_model,
@@ -50,7 +49,6 @@ async def process_file_upload(file: UploadFile = File(...)) -> Response:
         processed_content = process_file(
             local_input_path,
             detect_noise_model,
-            gemini_model,
             wav2vec2_processor,
             wav2vec2_model,
             text_to_mel_model,
