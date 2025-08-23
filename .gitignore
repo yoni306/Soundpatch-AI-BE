@@ -70,5 +70,7 @@ coverage.xml
 # Output files
 temp_files/
 
-# Model weights
+# Model weights - allow specific models
 *.h5
+!final_model.h5
+!text_to_mel_weights.h5
