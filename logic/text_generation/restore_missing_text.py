@@ -60,7 +60,9 @@ def gemini_rest_generate(
                     return f"[Gemini parse error: {e}]"
             # קודי שגיאה נפוצים: 429/403/5xx
             if r.status_code in (429, 500, 502, 503, 504):
-                time.sleep(1.5 * attempt)
+                wait_time = 5 * attempt  # חכה יותר זמן במקרה של rate limit
+                print(f"⏳ Rate limit hit, waiting {wait_time}s...")
+                time.sleep(wait_time)
                 continue
             return f"[Gemini HTTP {r.status_code}: {r.text[:200]}]"
         except Exception as e:

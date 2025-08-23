@@ -7,7 +7,7 @@ import sys
 import json
 
 # Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from logic.noise_detection.detect_noise_events import detect_noise_audio
 from logic.transcription.transcribe_events import clip_and_transcribe_events
@@ -17,7 +17,7 @@ from config import settings
 def test_complete_pipeline():
     """Test the complete pipeline"""
     # Use generic path to wav folder in project
-    wav_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wav")
+    wav_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "wav")
     
     if not os.path.exists(wav_folder):
         print(f"❌ WAV folder not found: {wav_folder}")
@@ -76,7 +76,11 @@ def test_complete_pipeline():
     print("📝 Sending prompts to Gemini API...")
     
     try:
-        restored_results = restore_missing_text_via_rest(clip_results, api_key=settings.GEMINI_API_KEY)
+        restored_results = restore_missing_text_via_rest(
+            clip_results, 
+            api_key=settings.GEMINI_API_KEY,
+            log_path="gemini_restore_log.txt"  # Save detailed log
+        )
         print(f"✅ Restored text for {len(restored_results)} segments")
         
         # Print detailed Gemini responses
