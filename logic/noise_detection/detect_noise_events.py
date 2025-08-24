@@ -32,8 +32,14 @@ def detect_noise_audio(wav_file_path: str) -> Dict[str, Any]:
         if not wav_file_path.lower().endswith('.wav'):
             raise ValueError("Only .wav files are supported")
             
-        # Load model
-        model_path = r"c:\Users\מנהל\Documents\GitHub\Soundpatch-AI-BE\final_model.h5"
+        # Load model - Cross-platform path handling
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        model_path = os.path.join(project_root, "final_model.h5")
+        
+        # Check if model exists
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found at: {model_path}")
+            
         model = load_noise_detectoion_model(model_path, verbose=False)
         
         # Preprocess audio
