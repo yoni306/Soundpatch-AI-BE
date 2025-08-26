@@ -20,9 +20,9 @@ def prepare_pred_rows(clip_results: Dict[str, Any]) -> List[Dict[str, Any]]:
     pred_rows: List[Dict[str, Any]] = []
     
     for tid, data in clip_results.items():
-        event = data["ev"]
-        words = data.get("words", [])
-        
+        event = data["ev"]("words", [])
+
+        words = data.get
         # Extract text from words (words now contain {text, start, end})
         transcribed_text = " ".join([word.get("text", "") for word in words if word.get("text", "").strip()])
         
