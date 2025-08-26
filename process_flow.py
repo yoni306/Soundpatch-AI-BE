@@ -3,7 +3,7 @@ from logic.noise_detection.detect_noise_events import detect_noise_audio
 from logic.transcription.transcribe_events import clip_and_transcribe_events
 from logic.text_generation.restore_missing_text import restore_missing_text_via_rest
 from logic.speaker_embedding.speaker_embedding import extract_speaker_embedding
-from logic.mel_spectogram_generation.text_to_mel_inference import predict_mel_from_text
+from logic.mel_spectogram_generation.text_to_mel_inference_kesem import predict_mel_from_text
 from logic.voice_generation.vocoder_utils import save_mel_predictions_as_audio
 from logic.utilities.reconstruct_clean_audio import reconstruct_clean_audio
 from logic.utilities.finalize_output import finalize_audio_or_video_output
@@ -74,7 +74,7 @@ def process_file(
         raise Exception(f"Noise detection failed: {noise_result['error']}")
     
     noise_events: List[Dict[str, Any]] = noise_result["events"]
-    print(f"✅ Found {len(noise_events)} noise events")
+    print(f"Found {len(noise_events)} noise events")
     
     if len(noise_events) == 0:
         print("No noise events found, returning original file")
@@ -94,19 +94,19 @@ def process_file(
         wav_path, 
         settings.ASSEMBLYAI_API_KEY
     )
-    print(f"✅ Transcribed {len(clip_results)} clips")
+    print(f"Transcribed {len(clip_results)} clips")
 
     # Step 4: Run the Gemini LLM to restore the missing text (using REST API)
-    print("🤖 Step 4: Restoring missing text with Gemini...")
+    print("Step 4: Restoring missing text with Gemini...")
     
     restored_text: List[Dict[str, Any]] = restore_missing_text_via_rest(
         clip_results, 
         api_key=settings.GEMINI_API_KEY,
         log_path="gemini_restore_log.txt"  # Save detailed log
     )
-    print(f"✅ Restored text for {len(restored_text)} segments")
+    print(f"Restored text for {len(restored_text)} segments")
     
-    print("✅ Pipeline completed up to text restoration!")
+    print("Pipeline completed up to text restoration!")
     print(f"Summary: {len(noise_events)} events → {len(clip_results)} clips → {len(restored_text)} restorations")
     
     # Create results summary for debugging/testing
@@ -125,16 +125,8 @@ def process_file(
     with open(results_path, "w", encoding="utf-8") as f:
         json.dump(pipeline_results, f, indent=2, ensure_ascii=False, default=str)
     print(f"Results saved to: {results_path}")
-    
-    # Continue to the rest of the pipeline (Step 5 onwards)
-    # The restored_text is ready for the next stages
 
-    # Step 5: Extract the speaker embedding using the whole WAV file
-    speaker_embedding: np.ndarray = extract_speaker_embedding(wav_path, wav2vec2_processor, wav2vec2_model)
-    
-    print("✅ Step 5 completed: Speaker embedding extracted")
-
-    # Step 6: Run the text to mel spectrogram model
+    # Step 5: Run the text to mel spectrogram model
     mel_spectrograms: List[np.ndarray] = []
 
     for event in restored_text:
@@ -144,22 +136,22 @@ def process_file(
             mel_spectrogram: np.ndarray = predict_mel_from_text(restored_text_content, speaker_embedding, text_to_mel_model)
             mel_spectrograms.append(mel_spectrogram)
 
-    # Step 7: Run the vocoder model for each mel spectrogram
+    # Step 6: Run the vocoder model for each mel spectrogram
     mel_predictions: Dict[str, np.ndarray] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}
     output_dir: str = settings.UPLOAD_DIR
     save_mel_predictions_as_audio(mel_predictions, output_dir, hifigan_model, device)
 
-    # Step 8: Create a new WAV file that replaces the noisy events
+    # Step 7: Create a new WAV file that replaces the noisy events
     clean_wav_path: str = reconstruct_clean_audio(wav_path, mel_spectrograms, noise_events, output_dir)
 
-    # Step 9: Convert to the original file format
+    # Step 8: Convert to the original file format
     final_output_path: str = finalize_audio_or_video_output(file_path, clean_wav_path)
 
-    # Step 10: Read the processed file content
+    # Step 9: Read the processed file content
     with open(final_output_path, 'rb') as f:
         file_content = f.read()
 
-    # Step 11: Clean up temporary files
+    # Step 10: Clean up temporary files
     if wav_path != file_path:  # Only remove if it's a converted file
         os.remove(wav_path)
     os.remove(clean_wav_path)

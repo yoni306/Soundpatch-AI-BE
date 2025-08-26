@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
     # Model weights paths
     DETECT_NOISE_MODEL_WEIGHTS: str = "final_model.h5"
-    TEXT_TO_MEL_MODEL_WEIGHTS: str = "text_to_mel_weights.h5"
+    TEXT_TO_MEL_MODEL_WEIGHTS: str = "model_weights_22_08_25-1.pth"
     
     class Config:
         case_sensitive = True
