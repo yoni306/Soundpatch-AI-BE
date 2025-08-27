@@ -1,5 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
+import os
+import numpy as np
 
 
 # --- F1 Metric --------------------------------------------------------------
@@ -70,9 +72,7 @@ def focal_loss_dynamic(gamma=2.0, eps=1e-7):
 
 # --- Load Model -------------------------------------------------------------
 def load_noise_detectoion_model(weights_path: str, verbose: bool = True):
-    """Load the trained noise detection model"""
-    import os
-    import numpy as np
+    """Load the trained noise detection model with fallback options"""
     
     if verbose:
         print("Loading trained noise detection model...")
@@ -88,6 +88,7 @@ def load_noise_detectoion_model(weights_path: str, verbose: bool = True):
     }
     
     try:
+        # First try: Load with custom objects
         model = tf.keras.models.load_model(weights_path, custom_objects=custom_objects)
         if verbose:
             print(f"Model loaded successfully ({model.count_params():,} parameters)")
@@ -103,4 +104,20 @@ def load_noise_detectoion_model(weights_path: str, verbose: bool = True):
     except Exception as e:
         if verbose:
             print(f"Error loading model: {e}")
-        return None
+        
+        # Fallback: Create a new model without loading weights
+        if verbose:
+            print("Creating new model without pre-trained weights...")
+        
+        try:
+            model = build_model()
+            if verbose:
+                print(f"New model created successfully ({model.count_params():,} parameters)")
+                print("Note: This model will need to be trained or weights need to be loaded manually")
+            
+            return model
+            
+        except Exception as e2:
+            if verbose:
+                print(f"Error creating new model: {e2}")
+            return None

@@ -13,6 +13,7 @@ import os
 import json
 from typing import Dict, List, Tuple, Any, Union
 import numpy as np
+import torch
 
 
 def prepare_pred_rows(clip_results: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -129,28 +130,29 @@ def process_file(
     # Continue to the rest of the pipeline (Step 5 onwards)
     # The restored_text is ready for the next stages
 
-    # Step 5: Extract the speaker embedding using the whole WAV file
-    speaker_embedding: np.ndarray = extract_speaker_embedding(wav_path, wav2vec2_processor, wav2vec2_model)
+    # # Step 5: Extract the speaker embedding using the whole WAV file
+    # speaker_embedding: np.ndarray = extract_speaker_embedding(wav_path, wav2vec2_processor, wav2vec2_model)
     
-    print("✅ Step 5 completed: Speaker embedding extracted")
+    # print("✅ Step 5 completed: Speaker embedding extracted")
 
     # Step 6: Run the text to mel spectrogram model
-    mel_spectrograms: List[np.ndarray] = []
+    mel_spectrograms: List[torch.Tensor] = []
 
     for event in restored_text:
         # Extract the restored text from the event dictionary
         restored_text_content = event.get("restored_text", "")
         if restored_text_content:
-            mel_spectrogram: np.ndarray = predict_mel_from_text(restored_text_content, speaker_embedding, text_to_mel_model)
+            mel_spectrogram: torch.Tensor = predict_mel_from_text(restored_text_content, text_to_mel_model)
             mel_spectrograms.append(mel_spectrogram)
 
     # Step 7: Run the vocoder model for each mel spectrogram
-    mel_predictions: Dict[str, np.ndarray] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}
+    mel_predictions: Dict[str, torch.Tensor] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}
     output_dir: str = settings.UPLOAD_DIR
     save_mel_predictions_as_audio(mel_predictions, output_dir, hifigan_model, device)
 
     # Step 8: Create a new WAV file that replaces the noisy events
-    clean_wav_path: str = reconstruct_clean_audio(wav_path, mel_spectrograms, noise_events, output_dir)
+    clean_wav_path: str = os.path.join(output_dir, "reconstructed_clean_audio.wav")
+    reconstruct_clean_audio(wav_path, noise_events, output_dir, clean_wav_path)
 
     # Step 9: Convert to the original file format
     final_output_path: str = finalize_audio_or_video_output(file_path, clean_wav_path)

@@ -72,5 +72,9 @@ temp_files/
 
 # Model weights - allow specific models
 *.h5
+*.pth
 !final_model.h5
 !text_to_mel_weights.h5
+
+# Waveform outputs
+*.wav
