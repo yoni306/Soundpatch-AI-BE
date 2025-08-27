@@ -3,7 +3,7 @@ from logic.noise_detection.detect_noise_events import detect_noise_audio
 from logic.transcription.transcribe_events import clip_and_transcribe_events
 from logic.text_generation.restore_missing_text import restore_missing_text_via_rest
 from logic.speaker_embedding.speaker_embedding import extract_speaker_embedding
-from logic.mel_spectogram_generation.text_to_mel_inference_kesem import predict_mel_from_text
+from logic.mel_spectogram_generation.text_to_mel_model_inference import predict_mel_from_text
 from logic.voice_generation.vocoder_utils import save_mel_predictions_as_audio
 from logic.utilities.reconstruct_clean_audio import reconstruct_clean_audio
 from logic.utilities.finalize_output import finalize_audio_or_video_output
@@ -127,14 +127,17 @@ def process_file(
     print(f"Results saved to: {results_path}")
 
     # Step 5: Run the text to mel spectrogram model
+    print("Step 5: Generating mel spectrograms from restored text...")
     mel_spectrograms: List[np.ndarray] = []
 
     for event in restored_text:
         # Extract the restored text from the event dictionary
         restored_text_content = event.get("restored_text", "")
         if restored_text_content:
-            mel_spectrogram: np.ndarray = predict_mel_from_text(restored_text_content, speaker_embedding, text_to_mel_model)
+            mel_spectrogram: np.ndarray = predict_mel_from_text(restored_text_content)
             mel_spectrograms.append(mel_spectrogram)
+    
+    print(f"Generated {len(mel_spectrograms)} mel spectrograms")
 
     # Step 6: Run the vocoder model for each mel spectrogram
     mel_predictions: Dict[str, np.ndarray] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}

@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+"""
+Test: Uses exactly the same logic as steps 5 and 6 in process_flow.py
+Takes text input and runs the exact same code from process_flow.py
+"""
+
+import sys
+import os
+import numpy as np
+import torch
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent
+sys.path.append(str(project_root))
+
+
+def exact_steps_5_6_test():
+    """Test using exactly the same logic as steps 5 and 6 in process_flow.py"""
+    print("🎵 Test: Exact steps 5 and 6 from process_flow.py")
+    print("=" * 50)
+
+    try:
+        # Load models (same as process_flow.py expects)
+        print("Loading models...")
+
+        # Load text-to-mel model
+        from logic.mel_spectogram_generation.text_to_mel_model_inference import (
+            load_text_to_mel_model_kesem
+        )
+
+        weights_path = "model_weights_22_08_25-1.pth"
+        text_to_mel_model = load_text_to_mel_model_kesem(weights_path)
+        print("✅ Text-to-mel model loaded")
+
+        # Load HiFi-GAN vocoder
+        from nemo.collections.tts.models import HifiGanModel
+        hifigan_model = HifiGanModel.from_pretrained(model_name="nvidia/tts_hifigan")
+        device = next(hifigan_model.parameters()).device
+        print(f"✅ HiFi-GAN vocoder loaded on device: {device}")
+
+
+        # Import the exact function used in process_flow.py
+        from logic.mel_spectogram_generation.text_to_mel_inference_kesem import predict_mel_from_text
+        from logic.voice_generation.vocoder_utils import save_mel_predictions_as_audio
+        from config import settings
+
+        # Create test input (simulating restored_text from process_flow.py)
+        restored_text = [
+            {"restored_text": "hello"},
+            {"restored_text": "world"}
+        ]
+
+        print(f"\nInput text: {[event.get('restored_text', '') for event in restored_text]}")
+
+        # ===== STEP 5: EXACT CODE FROM PROCESS_FLOW.PY =====
+        print("\n" + "=" * 50)
+        print("STEP 5: Run the text to mel spectrogram model")
+        print("=" * 50)
+
+        mel_spectrograms: List[np.ndarray] = []
+
+        for event in restored_text:
+            # Extract the restored text from the event dictionary
+            restored_text_content = event.get("restored_text", "")
+            if restored_text_content:
+                print(f"Processing: '{restored_text_content}'")
+                mel_spectrogram: np.ndarray = predict_mel_from_text(restored_text_content, speaker_embedding,
+                                                                    text_to_mel_model)
+                mel_spectrograms.append(mel_spectrogram)
+                print(f"  Generated mel shape: {mel_spectrogram.shape}")
+
+        print(f"✅ Generated {len(mel_spectrograms)} mel spectrograms")
+
+        # ===== STEP 6: EXACT CODE FROM PROCESS_FLOW.PY =====
+        print("\n" + "=" * 50)
+        print("STEP 6: Run the vocoder model for each mel spectrogram")
+        print("=" * 50)
+
+        mel_predictions: Dict[str, np.ndarray] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}
+        output_dir: str = settings.UPLOAD_DIR
+        print(f"Output directory: {output_dir}")
+        print(f"Mel predictions keys: {list(mel_predictions.keys())}")
+
+        save_mel_predictions_as_audio(mel_predictions, output_dir, hifigan_model, device)
+
+        print("\n🎉 Steps 5 and 6 completed successfully!")
+        print(f"📁 Check the audio files in: {os.path.abspath(output_dir)}")
+
+        # List generated files
+        if os.path.exists(output_dir):
+            files = [f for f in os.listdir(output_dir) if f.endswith('.wav')]
+            print(f"Generated audio files: {files}")
+
+        return True
+
+    except Exception as e:
+        print(f"\n❌ Error during test: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+if __name__ == "__main__":
+    success = exact_steps_5_6_test()
+    if success:
+        print("\n✅ Success! Used exact same logic as process_flow.py steps 5 and 6.")
+    else:
+        print("\n❌ Test failed. Check the error messages above.")

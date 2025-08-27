@@ -1,6 +1,6 @@
 import os
 import torch
-import torchaudio
+import torchaudio  # pyright: ignore[reportUnusedImport]
 import soundfile as sf
 import numpy as np
 from typing import Dict
@@ -9,7 +9,13 @@ from transformers import AutoProcessor, AutoModel
 
 # Load pretrained HiFi-GAN model once
 from nemo.collections.tts.models import HifiGanModel
-hifigan_model = HifiGanModel.from_pretrained(model_name="nvidia/tts_hifigan")
+# hifigan_model = HifiGanModel.from_pretrained(model_name="nvidia/tts_hifigan")
+try:
+    print("Loading HiFi-GAN model...")
+    hifigan_model = HifiGanModel.from_pretrained(model_name="nvidia/tts_hifigan", device="cpu")
+    print("Model loaded successfully.")
+except Exception as e:
+    print(f"Error loading HiFi-GAN model: {e}")
 
 
 def prepare_mel_for_vocoder(
