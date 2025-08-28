@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Model weights paths
-    DETECT_NOISE_MODEL_WEIGHTS: str = "final_model.h5"
-    TEXT_TO_MEL_MODEL_WEIGHTS: str = "text_to_mel_model_weights.pth"
+    DETECT_NOISE_MODEL_WEIGHTS: str = "/home/deep/Soundpatch-AI-BE/final_model.h5"
+    TEXT_TO_MEL_MODEL_WEIGHTS: str = "/home/deep/kesem_version/Soundpatch-AI-BE/model_weights_22_08_25-1.pth"
     
     class Config:
         case_sensitive = True

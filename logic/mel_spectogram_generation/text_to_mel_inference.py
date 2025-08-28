@@ -18,7 +18,14 @@ S2I = {s: i for i, s in enumerate(list("_~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl
 def text_to_sequence(t: str) -> List[int]:
     """Convert text to sequence of token IDs (same as in notebook)"""
     t = " ".join(t.lower().split())
-    return [S2I[c] for c in t if c in S2I] + [S2I["~"]]
+    sequence = [S2I[c] for c in t if c in S2I] + [S2I["~"]]
+    
+    # Validate that all token IDs are within the expected range
+    max_token_id = max(S2I.values())
+    if any(token_id > max_token_id for token_id in sequence):
+        raise ValueError(f"Token ID exceeds vocabulary size. Max allowed: {max_token_id}")
+    
+    return sequence
 
 
 def maybe_phonemes(word: str) -> str:
@@ -585,8 +592,10 @@ class TextToMelSpectrogramModel(nn.Module):
     def __init__(self, embed_dim=512, mel_dim=80, max_decoder_steps=1000, stop_threshold=0.5, r=3):
         super().__init__()
         self.mel_dim = mel_dim
-        self.embedding = nn.Embedding(1, embed_dim)
-        std = sqrt(2.0 / (1 + embed_dim))
+        # Use correct vocabulary size (77 characters + 1 for padding = 78)
+        vocab_size = len(S2I)
+        self.embedding = nn.Embedding(vocab_size, embed_dim)
+        std = sqrt(2.0 / (vocab_size + embed_dim))
         val = sqrt(3.0) * std
         self.embedding.weight.data.uniform_(-val, val)
 
@@ -701,6 +710,17 @@ def predict_mel_from_text(text: str, model, use_phonemes: bool = True) -> torch.
     
     # Convert text to sequence
     text_sequence = text_to_sequence(text)
+    
+    # Debug: Print sequence info
+    print(f"Text: '{text}'")
+    print(f"Sequence length: {len(text_sequence)}")
+    print(f"Token IDs: {text_sequence}")
+    print(f"Max token ID: {max(text_sequence)}")
+    print(f"Embedding vocab size: {model.embedding.num_embeddings}")
+    
+    # Validate sequence before creating tensor
+    if max(text_sequence) >= model.embedding.num_embeddings:
+        raise ValueError(f"Token ID {max(text_sequence)} exceeds embedding vocabulary size {model.embedding.num_embeddings}")
     
     # Convert to tensor and add batch dimension
     text_tensor = torch.tensor(text_sequence, dtype=torch.long, device=device).unsqueeze(0)

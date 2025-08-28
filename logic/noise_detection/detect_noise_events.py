@@ -4,7 +4,7 @@ import os
 import json
 from typing import List, Dict, Any
 from .detect_noise_moedl import load_noise_detectoion_model
-
+from config import settings
 # --- Constants ---
 LABEL_NAMES = ["signal_loss", "volume_drop", "compression_artifact"]
 FRAME_HOP = 160
@@ -34,7 +34,7 @@ def detect_noise_audio(wav_file_path: str) -> Dict[str, Any]:
             
         # Load model - Cross-platform path handling
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        model_path = os.path.join(project_root, "final_model.h5")
+        model_path = settings.DETECT_NOISE_MODEL_WEIGHTS
         
         # Check if model exists
         if not os.path.exists(model_path):

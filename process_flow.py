@@ -1,19 +1,16 @@
 from logic.utilities.convert_to_wav import convert_to_wav
-from logic.noise_detection.detect_noise_events import detect_noise_audio
-from logic.transcription.transcribe_events import clip_and_transcribe_events
-from logic.text_generation.restore_missing_text import restore_missing_text_via_rest
-from logic.speaker_embedding.speaker_embedding import extract_speaker_embedding
 from logic.mel_spectogram_generation.text_to_mel_inference import predict_mel_from_text
 from logic.voice_generation.vocoder_utils import save_mel_predictions_as_audio
 from logic.utilities.reconstruct_clean_audio import reconstruct_clean_audio
 from logic.utilities.finalize_output import finalize_audio_or_video_output
 from config import settings
-from logic.utilities.save_to_supabase import save_to_supabase
 import os
 import json
-from typing import Dict, List, Tuple, Any, Union
+from typing import Dict, List, Any, Union
 import numpy as np
 import torch
+import subprocess
+import re
 
 
 def prepare_pred_rows(clip_results: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -65,77 +62,31 @@ def process_file(
     Returns:
         Union[bytes, Dict[str, Any]]: Either the processed file content or processing results
     """
+    print("🔄 Starting file processing...")
     # Step 1: Convert the given file to WAV format
     wav_path: str = convert_to_wav(file_path)
+    print("✅ Step 1 completed: Converted to WAV format")
+    
+    # Steps 2-5: Run the TF pipeline
+    base_tf_process_dir = "/home/deep/Soundpatch-AI-BE"
+    print("🔄 Starting TF pipeline...")
+    cmd = f"conda run -n tf-minimal python {base_tf_process_dir}/process_flow.py {file_path}"
 
-    # Step 2: Detect audio gaps using the noise detection model
-    noise_result: Dict[str, Any] = detect_noise_audio(wav_path)
-    
-    if "error" in noise_result:
-        raise Exception(f"Noise detection failed: {noise_result['error']}")
-    
-    noise_events: List[Dict[str, Any]] = noise_result["events"]
-    print(f"✅ Found {len(noise_events)} noise events")
-    
-    if len(noise_events) == 0:
-        print("No noise events found, returning original file")
-        # No noise events found, return original file
-        with open(file_path, 'rb') as f:
-            file_content = f.read()
-        
-        # Clean up WAV file only if it's different from the original
-        if os.path.exists(wav_path) and wav_path != file_path:
-            os.remove(wav_path)
-        
-        return file_content
-
-    # Step 3: Run the STT with AssemblyAI for the noisy events
-    clip_results: Dict[str, Any] = clip_and_transcribe_events(
-        noise_events, 
-        wav_path, 
-        settings.ASSEMBLYAI_API_KEY
+    result = subprocess.run(
+        cmd,
+        shell=True,
+        capture_output=True,
+        text=True
     )
-    print(f"✅ Transcribed {len(clip_results)} clips")
-
-    # Step 4: Run the Gemini LLM to restore the missing text (using REST API)
-    print("🤖 Step 4: Restoring missing text with Gemini...")
+    json_file = re.findall(r"[\w-]+\.json", result.stdout)[0]
+    final_results = json.load(open(json_file))
+    restored_text = final_results["restored_text"]
+    noise_events = final_results["noise_events"]
+    print("✅ Step 2-5 completed: TF pipeline completed")
     
-    restored_text: List[Dict[str, Any]] = restore_missing_text_via_rest(
-        clip_results, 
-        api_key=settings.GEMINI_API_KEY,
-        log_path="gemini_restore_log.txt"  # Save detailed log
-    )
-    print(f"✅ Restored text for {len(restored_text)} segments")
-    
-    print("✅ Pipeline completed up to text restoration!")
-    print(f"Summary: {len(noise_events)} events → {len(clip_results)} clips → {len(restored_text)} restorations")
-    
-    # Create results summary for debugging/testing
-    pipeline_results = {
-        "input_file": file_path,
-        "wav_path": wav_path,
-        "noise_events_count": len(noise_events),
-        "noise_events": noise_events,
-        "transcription_results": clip_results,
-        "restoration_results": restored_text,
-        "status": "completed_until_text_restoration"
-    }
-    
-    # Save results for debugging (optional)
-    results_path = "pipeline_results.json"
-    with open(results_path, "w", encoding="utf-8") as f:
-        json.dump(pipeline_results, f, indent=2, ensure_ascii=False, default=str)
-    print(f"Results saved to: {results_path}")
-    
-    # Continue to the rest of the pipeline (Step 5 onwards)
-    # The restored_text is ready for the next stages
-
-    # # Step 5: Extract the speaker embedding using the whole WAV file
-    # speaker_embedding: np.ndarray = extract_speaker_embedding(wav_path, wav2vec2_processor, wav2vec2_model)
-    
-    # print("✅ Step 5 completed: Speaker embedding extracted")
 
     # Step 6: Run the text to mel spectrogram model
+    print("🔄 Starting text to mel spectrogram model...")
     mel_spectrograms: List[torch.Tensor] = []
 
     for event in restored_text:
@@ -144,27 +95,53 @@ def process_file(
         if restored_text_content:
             mel_spectrogram: torch.Tensor = predict_mel_from_text(restored_text_content, text_to_mel_model)
             mel_spectrograms.append(mel_spectrogram)
+    print("✅ Step 6 completed: Text to mel spectrogram model completed")
+
 
     # Step 7: Run the vocoder model for each mel spectrogram
+    print("🔄 Starting vocoder model...")
     mel_predictions: Dict[str, torch.Tensor] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}
     output_dir: str = settings.UPLOAD_DIR
     save_mel_predictions_as_audio(mel_predictions, output_dir, hifigan_model, device)
+    print("✅ Step 7 completed: Vocoder model completed")
+
+    # ONLY FOR TESTING
+    with open(wav_path, 'rb') as f:
+        file_content = f.read()
+    
+    return file_content
+
+
 
     # Step 8: Create a new WAV file that replaces the noisy events
+    print("🔄 Starting clean audio reconstruction...")
     clean_wav_path: str = os.path.join(output_dir, "reconstructed_clean_audio.wav")
     reconstruct_clean_audio(wav_path, noise_events, output_dir, clean_wav_path)
+    print("✅ Step 8 completed: Clean audio reconstruction completed")
+
 
     # Step 9: Convert to the original file format
+    print("🔄 Starting final output...")
     final_output_path: str = finalize_audio_or_video_output(file_path, clean_wav_path)
+    print("✅ Step 9 completed: Final output completed")
+
 
     # Step 10: Read the processed file content
+    print("🔄 Reading the processed file content...")
     with open(final_output_path, 'rb') as f:
         file_content = f.read()
+    print("✅ Step 10 completed: Read the processed file content")
+
 
     # Step 11: Clean up temporary files
+    print("🔄 Cleaning up temporary files...")
     if wav_path != file_path:  # Only remove if it's a converted file
         os.remove(wav_path)
     os.remove(clean_wav_path)
     os.remove(final_output_path)
+    print("✅ Step 11 completed: Cleaned up temporary files")
+
+
+    print("✅ File processing completed successfully")
 
     return file_content
