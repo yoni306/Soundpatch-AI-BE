@@ -26,16 +26,21 @@ def reconstruct_clean_audio(original_wav_path: str, events: List[Dict[str, Any]]
     last_end_ms = 0
     original_base = os.path.splitext(os.path.basename(original_wav_path))[0]
 
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++")
+    print(f"Original base: {original_base}")
+    print(f"Events: {events}")
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++")
+
     for event in events:
-        start_ms = int(event["start"] * 1000)
-        end_ms = int(event["end"] * 1000)
+        start_ms = int(event["start_time"] * 1000)
+        end_ms = int(event["end_time"] * 1000)
 
         # Append segment before the noise
         reconstructed += original_audio[last_end_ms:start_ms]
 
         # Construct vocoder-generated filename
-        start_tag = seconds_to_mmss(event["start"]).replace(":", "")
-        end_tag = seconds_to_mmss(event["end"]).replace(":", "")
+        start_tag = seconds_to_mmss(event["start_time"]).replace(":", "")
+        end_tag = seconds_to_mmss(event["end_time"]).replace(":", "")
         generated_filename = f"{original_base}_{start_tag}_{end_tag}.wav"
         generated_path = os.path.join(vocoder_wav_dir, generated_filename)
 

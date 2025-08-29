@@ -13,6 +13,12 @@ import subprocess
 import re
 
 
+def seconds_to_mmss(seconds: float) -> str:
+    m, s = divmod(int(seconds), 60)
+    return f"{m:02d}:{s:02d}"
+
+
+
 def prepare_pred_rows(clip_results: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Convert clip_results to format needed for the rest of the pipeline"""
     pred_rows: List[Dict[str, Any]] = []
@@ -79,43 +85,53 @@ def process_file(
         text=True
     )
     json_file = re.findall(r"[\w-]+\.json", result.stdout)[0]
+    print(f"JSON file: {json_file}")
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++")
     final_results = json.load(open(json_file))
     restored_text = final_results["restored_text"]
     noise_events = final_results["noise_events"]
+    noise_events_dict: Dict[str, dict] = {}
+    original_base = os.path.splitext(os.path.basename(wav_path))[0]
+
+    for noice_event in noise_events:
+        start_tag = seconds_to_mmss(noice_event["start_time"]).replace(":", "")
+        end_tag = seconds_to_mmss(noice_event["end_time"]).replace(":", "")
+        generated_filename = f"{original_base}_{start_tag}_{end_tag}.wav"
+        noise_events_dict[generated_filename] = noice_event
+    
     print("✅ Step 2-5 completed: TF pipeline completed")
     
 
     # Step 6: Run the text to mel spectrogram model
     print("🔄 Starting text to mel spectrogram model...")
-    mel_spectrograms: List[torch.Tensor] = []
+    mel_spectrograms: Dict[torch.Tensor] = {}
 
     for event in restored_text:
+        start_tag = seconds_to_mmss(event["start_time"]).replace(":", "")
+        end_tag = seconds_to_mmss(event["end_time"]).replace(":", "")
+        generated_filename = f"{original_base}_{start_tag}_{end_tag}.wav"
         # Extract the restored text from the event dictionary
         restored_text_content = event.get("restored_text", "")
         if restored_text_content:
             mel_spectrogram: torch.Tensor = predict_mel_from_text(restored_text_content, text_to_mel_model)
-            mel_spectrograms.append(mel_spectrogram)
+            mel_spectrograms[generated_filename] = mel_spectrogram
     print("✅ Step 6 completed: Text to mel spectrogram model completed")
 
 
     # Step 7: Run the vocoder model for each mel spectrogram
     print("🔄 Starting vocoder model...")
-    mel_predictions: Dict[str, torch.Tensor] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}
+    # mel_predictions: Dict[str, torch.Tensor] = {f"clip_{i}": mel for i, mel in enumerate(mel_spectrograms)}
     output_dir: str = settings.UPLOAD_DIR
-    save_mel_predictions_as_audio(mel_predictions, output_dir, hifigan_model, device)
+    save_mel_predictions_as_audio(mel_spectrograms, output_dir, hifigan_model, device, noise_events_dict, wav_path)
     print("✅ Step 7 completed: Vocoder model completed")
-
-    # ONLY FOR TESTING
-    with open(wav_path, 'rb') as f:
-        file_content = f.read()
-    
-    return file_content
-
 
 
     # Step 8: Create a new WAV file that replaces the noisy events
     print("🔄 Starting clean audio reconstruction...")
-    clean_wav_path: str = os.path.join(output_dir, "reconstructed_clean_audio.wav")
+
+    new_wav_name = f"{os.path.splitext(os.path.basename(wav_path))[0]}_clean.wav"
+    clean_wav_path: str = os.path.join(output_dir, new_wav_name)
+
     reconstruct_clean_audio(wav_path, noise_events, output_dir, clean_wav_path)
     print("✅ Step 8 completed: Clean audio reconstruction completed")
 

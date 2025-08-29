@@ -1,8 +1,0 @@
-================================================================================
-Clip 0  (980.09-985.48s)  type=volume_drop  conf=0.901
-
-📝 Before: "Thank you. Thank you."
-🔇 During: ""
-📝 After:  "In 25 years, global energy consumption will increase by 50%."
-
-🤖 Gemini: "very much.  And now,"

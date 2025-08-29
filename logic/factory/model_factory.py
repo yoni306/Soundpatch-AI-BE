@@ -1,6 +1,6 @@
 from logic.noise_detection.detect_noise_moedl import load_noise_detectoion_model
 from logic.speaker_embedding.speaker_embedding import load_wav2vec2_model
-from logic.mel_spectogram_generation.text_to_mel_inference import load_text_to_mel_model
+from logic.mel_spectogram_generation.text_to_mel_model_inference import load_text_to_mel_model
 from logic.voice_generation.vocoder_utils import load_hifigan_model
 from config import settings
 
